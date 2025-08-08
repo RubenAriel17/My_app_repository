@@ -4,16 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mi Pequeño Inventario</title>
-    
-    <!-- Tailwind CSS para un diseño moderno y responsivo -->
+
     <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Google Fonts para una tipografía amigable -->
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
-    
-    <!-- Estilos personalizados -->
+
     <style>
         /* Usamos la fuente Nunito para un look más suave y amigable */
         body {
@@ -51,36 +48,29 @@
 </head>
 <body class="bg-emerald-50 text-gray-800">
 
-    <!-- Contenedor principal -->
     <div class="container mx-auto p-4 md:p-8">
 
-        <!-- Cabecera -->
         <header class="text-center mb-8">
             <h1 class="text-4xl md:text-5xl font-bold text-emerald-600">Mi Pequeño Inventario</h1>
             <p class="text-gray-500 mt-2">Gestiona el stock de tu tienda de ropa de bebé</p>
         </header>
 
-        <!-- Resumen y Controles -->
         <div class="bg-white p-4 rounded-xl shadow-lg mb-8">
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
-                <!-- Resumen de ganancias -->
                 <div class="bg-blue-100 p-4 rounded-lg">
                     <h3 class="font-bold text-blue-800">Ganancia Estimada</h3>
                     <p id="ganancia-total" class="text-2xl font-bold text-blue-900">$0.00</p>
                 </div>
-                <!-- Resumen de costos -->
                 <div class="bg-yellow-100 p-4 rounded-lg">
                     <h3 class="font-bold text-yellow-800">Costo Total Inventario</h3>
                     <p id="costo-total" class="text-2xl font-bold text-yellow-900">$0.00</p>
                 </div>
-                <!-- Total de artículos -->
                 <div class="bg-pink-100 p-4 rounded-lg">
                     <h3 class="font-bold text-pink-800">Artículos Totales</h3>
                     <p id="articulos-totales" class="text-2xl font-bold text-pink-900">0</p>
                 </div>
             </div>
-             <!-- Botones de acción -->
-            <div class="mt-6 flex flex-wrap justify-center gap-3">
+             <div class="mt-6 flex flex-wrap justify-center gap-3">
                 <button id="abrir-modal-btn" class="bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-2 px-4 rounded-full transition-transform transform hover:scale-105">
                     + Agregar Artículo
                 </button>
@@ -94,14 +84,11 @@
             </div>
         </div>
 
-        <!-- Lista de Inventario -->
         <main id="lista-inventario" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            <!-- Los artículos del inventario se insertarán aquí con JavaScript -->
-        </main>
+            </main>
 
     </div>
 
-    <!-- Modal para Agregar/Editar Artículo -->
     <div id="modal" class="fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-50 hidden">
         <div class="bg-white p-8 rounded-2xl shadow-2xl w-11/12 md:w-1/3 max-w-lg transform transition-all">
             <h2 id="modal-titulo" class="text-2xl font-bold mb-6 text-emerald-700">Agregar Nuevo Artículo</h2>
@@ -132,12 +119,10 @@
             </form>
         </div>
     </div>
-    
-    <!-- Custom Alert Box -->
+
     <div id="custom-alert" class="hidden fixed top-5 right-5 bg-green-500 text-white py-2 px-4 rounded-lg shadow-lg z-50">
         <p id="custom-alert-message"></p>
     </div>
-
 
     <script>
         // --- SECCIÓN DE LÓGICA (JAVASCRIPT) ---
@@ -158,11 +143,36 @@
             const articuloIdInput = document.getElementById('articulo-id');
 
             // --- Estado de la aplicación ---
-            // El inventario se guarda como un array de objetos.
-            // Intentamos cargarlo desde localStorage, si no existe, empezamos con un array vacío.
-            let inventario = JSON.parse(localStorage.getItem('inventarioBebe')) || [];
+            let inventario = []; // El inventario se inicializa vacío
 
             // --- Funciones Principales ---
+
+            /**
+             * Carga el estado del inventario desde un archivo JSON.
+             * Si falla, intenta cargarlo desde localStorage.
+             */
+            const cargarInventarioInicial = async () => {
+                try {
+                    // Cargar desde el archivo JSON
+                    const response = await fetch('inventario_bebe_2025-08-05.json');
+                    if (!response.ok) {
+                        throw new Error('No se pudo cargar el archivo JSON.');
+                    }
+                    inventario = await response.json();
+                    guardarEnLocalStorage(); // Guarda el inventario cargado en localStorage para la próxima vez
+                    showAlert('Inventario cargado automáticamente.');
+                } catch (error) {
+                    // Si el archivo JSON falla, intenta cargar desde localStorage
+                    console.warn('Error al cargar el archivo JSON. Intentando cargar desde localStorage.');
+                    inventario = JSON.parse(localStorage.getItem('inventarioBebe')) || [];
+                    if (inventario.length > 0) {
+                        showAlert('Inventario cargado desde la última sesión.');
+                    } else {
+                        showAlert('No hay artículos en el inventario.', 'error');
+                    }
+                }
+                renderizarInventario();
+            };
 
             /**
              * Guarda el estado actual del inventario en el localStorage del navegador.
@@ -255,7 +265,7 @@
             const cerrarModal = () => {
                 modal.classList.add('hidden');
             };
-            
+
             /**
              * Muestra una notificación personalizada.
              * @param {string} message - El mensaje a mostrar.
@@ -264,10 +274,10 @@
             const showAlert = (message, type = 'success') => {
                 const alertBox = document.getElementById('custom-alert');
                 const alertMessage = document.getElementById('custom-alert-message');
-                
+
                 alertMessage.textContent = message;
                 alertBox.className = `fixed top-5 right-5 text-white py-2 px-4 rounded-lg shadow-lg z-50 ${type === 'success' ? 'bg-green-500' : 'bg-red-500'}`;
-                
+
                 alertBox.classList.remove('hidden');
                 setTimeout(() => {
                     alertBox.classList.add('hidden');
@@ -341,7 +351,7 @@
                     mostrarModal(inventario[indice]);
                     return; // Evita que se vuelva a renderizar innecesariamente
                 }
-                
+
                 guardarEnLocalStorage();
                 renderizarInventario();
             });
@@ -355,7 +365,7 @@
                 const dataStr = JSON.stringify(inventario, null, 2);
                 const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
                 const exportFileDefaultName = `inventario_bebe_${new Date().toISOString().slice(0,10)}.json`;
-                
+
                 const linkElement = document.createElement('a');
                 linkElement.setAttribute('href', dataUri);
                 linkElement.setAttribute('download', exportFileDefaultName);
@@ -391,7 +401,7 @@
 
             // --- Inicialización ---
             // Renderizar el inventario por primera vez al cargar la página.
-            renderizarInventario();
+            cargarInventarioInicial();
         });
     </script>
 </body>
