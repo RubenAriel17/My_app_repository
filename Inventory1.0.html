@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Pequeño Inventario</title>
+    
+    <!-- Tailwind CSS para un diseño moderno y responsivo -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts para una tipografía amigable -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Estilos personalizados -->
+    <style>
+        /* Usamos la fuente Nunito para un look más suave y amigable */
+        body {
+            font-family: 'Nunito', sans-serif;
+        }
+        /* Estilo para la barra de desplazamiento */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #d1fae5;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #a7f3d0;
+        }
+        /* Animación para la aparición de elementos */
+        .item-enter {
+            animation: enter 0.5s ease-out;
+        }
+        @keyframes enter {
+            0% {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body class="bg-emerald-50 text-gray-800">
+
+    <!-- Contenedor principal -->
+    <div class="container mx-auto p-4 md:p-8">
+
+        <!-- Cabecera -->
+        <header class="text-center mb-8">
+            <h1 class="text-4xl md:text-5xl font-bold text-emerald-600">Mi Pequeño Inventario</h1>
+            <p class="text-gray-500 mt-2">Gestiona el stock de tu tienda de ropa de bebé</p>
+        </header>
+
+        <!-- Resumen y Controles -->
+        <div class="bg-white p-4 rounded-xl shadow-lg mb-8">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+                <!-- Resumen de ganancias -->
+                <div class="bg-blue-100 p-4 rounded-lg">
+                    <h3 class="font-bold text-blue-800">Ganancia Estimada</h3>
+                    <p id="ganancia-total" class="text-2xl font-bold text-blue-900">$0.00</p>
+                </div>
+                <!-- Resumen de costos -->
+                <div class="bg-yellow-100 p-4 rounded-lg">
+                    <h3 class="font-bold text-yellow-800">Costo Total Inventario</h3>
+                    <p id="costo-total" class="text-2xl font-bold text-yellow-900">$0.00</p>
+                </div>
+                <!-- Total de artículos -->
+                <div class="bg-pink-100 p-4 rounded-lg">
+                    <h3 class="font-bold text-pink-800">Artículos Totales</h3>
+                    <p id="articulos-totales" class="text-2xl font-bold text-pink-900">0</p>
+                </div>
+            </div>
+             <!-- Botones de acción -->
+            <div class="mt-6 flex flex-wrap justify-center gap-3">
+                <button id="abrir-modal-btn" class="bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-2 px-4 rounded-full transition-transform transform hover:scale-105">
+                    + Agregar Artículo
+                </button>
+                <button id="exportar-btn" class="bg-sky-500 hover:bg-sky-600 text-white font-bold py-2 px-4 rounded-full transition-transform transform hover:scale-105">
+                    Exportar a JSON
+                </button>
+                <button onclick="document.getElementById('importar-input').click()" class="bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded-full transition-transform transform hover:scale-105">
+                    Importar desde JSON
+                </button>
+                <input type="file" id="importar-input" class="hidden" accept=".json">
+            </div>
+        </div>
+
+        <!-- Lista de Inventario -->
+        <main id="lista-inventario" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <!-- Los artículos del inventario se insertarán aquí con JavaScript -->
+        </main>
+
+    </div>
+
+    <!-- Modal para Agregar/Editar Artículo -->
+    <div id="modal" class="fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white p-8 rounded-2xl shadow-2xl w-11/12 md:w-1/3 max-w-lg transform transition-all">
+            <h2 id="modal-titulo" class="text-2xl font-bold mb-6 text-emerald-700">Agregar Nuevo Artículo</h2>
+            <form id="formulario-articulo">
+                <input type="hidden" id="articulo-id">
+                <div class="mb-4">
+                    <label for="nombre" class="block text-gray-600 mb-1">Nombre del Artículo</label>
+                    <input type="text" id="nombre" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-400" placeholder="Ej: Body de algodón" required>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                    <div>
+                        <label for="cantidad" class="block text-gray-600 mb-1">Cantidad</label>
+                        <input type="number" id="cantidad" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-400" min="0" value="1" required>
+                    </div>
+                    <div>
+                        <label for="costo" class="block text-gray-600 mb-1">Costo ($)</label>
+                        <input type="number" id="costo" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-400" min="0" step="0.01" placeholder="5.00" required>
+                    </div>
+                    <div>
+                        <label for="precio-venta" class="block text-gray-600 mb-1">P. Venta ($)</label>
+                        <input type="number" id="precio-venta" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-400" min="0" step="0.01" placeholder="15.00" required>
+                    </div>
+                </div>
+                <div class="flex justify-end gap-4 mt-8">
+                    <button type="button" id="cerrar-modal-btn" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-6 rounded-full">Cancelar</button>
+                    <button type="submit" class="bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-2 px-6 rounded-full">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Custom Alert Box -->
+    <div id="custom-alert" class="hidden fixed top-5 right-5 bg-green-500 text-white py-2 px-4 rounded-lg shadow-lg z-50">
+        <p id="custom-alert-message"></p>
+    </div>
+
+
+    <script>
+        // --- SECCIÓN DE LÓGICA (JAVASCRIPT) ---
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Referencias a los elementos del DOM
+            const listaInventario = document.getElementById('lista-inventario');
+            const abrirModalBtn = document.getElementById('abrir-modal-btn');
+            const cerrarModalBtn = document.getElementById('cerrar-modal-btn');
+            const modal = document.getElementById('modal');
+            const formularioArticulo = document.getElementById('formulario-articulo');
+            const exportarBtn = document.getElementById('exportar-btn');
+            const importarInput = document.getElementById('importar-input');
+            const gananciaTotalEl = document.getElementById('ganancia-total');
+            const costoTotalEl = document.getElementById('costo-total');
+            const articulosTotalesEl = document.getElementById('articulos-totales');
+            const modalTitulo = document.getElementById('modal-titulo');
+            const articuloIdInput = document.getElementById('articulo-id');
+
+            // --- Estado de la aplicación ---
+            // El inventario se guarda como un array de objetos.
+            // Intentamos cargarlo desde localStorage, si no existe, empezamos con un array vacío.
+            let inventario = JSON.parse(localStorage.getItem('inventarioBebe')) || [];
+
+            // --- Funciones Principales ---
+
+            /**
+             * Guarda el estado actual del inventario en el localStorage del navegador.
+             * Esto permite que los datos persistan aunque se cierre la pestaña.
+             */
+            const guardarEnLocalStorage = () => {
+                localStorage.setItem('inventarioBebe', JSON.stringify(inventario));
+            };
+
+            /**
+             * Renderiza (dibuja) todos los artículos del inventario en la página.
+             * Limpia la lista actual y la vuelve a crear desde cero con los datos del array 'inventario'.
+             */
+            const renderizarInventario = () => {
+                listaInventario.innerHTML = ''; // Limpiamos la vista actual
+                if (inventario.length === 0) {
+                    listaInventario.innerHTML = `<p class="text-gray-500 col-span-full text-center">No hay artículos en el inventario. ¡Agrega el primero!</p>`;
+                } else {
+                    inventario.forEach(articulo => {
+                        const gananciaPorArticulo = (articulo.precioVenta - articulo.costo) * articulo.cantidad;
+                        const tarjetaArticulo = document.createElement('div');
+                        tarjetaArticulo.className = 'bg-white rounded-xl shadow-lg p-5 flex flex-col justify-between item-enter';
+                        tarjetaArticulo.innerHTML = `
+                            <div>
+                                <h3 class="text-xl font-bold text-gray-800 truncate">${articulo.nombre}</h3>
+                                <p class="text-sm text-gray-500">Ganancia: <span class="font-semibold text-green-600">$${gananciaPorArticulo.toFixed(2)}</span></p>
+                                <div class="text-xs mt-2">
+                                    <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded-full">Costo: $${articulo.costo.toFixed(2)}</span>
+                                    <span class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full">Venta: $${articulo.precioVenta.toFixed(2)}</span>
+                                </div>
+                            </div>
+                            <div class="mt-4 flex justify-between items-center">
+                                <div class="flex items-center gap-2">
+                                    <button data-id="${articulo.id}" class="restar-cantidad bg-red-200 text-red-800 rounded-full w-8 h-8 font-bold text-lg hover:bg-red-300">-</button>
+                                    <span class="text-2xl font-bold w-12 text-center">${articulo.cantidad}</span>
+                                    <button data-id="${articulo.id}" class="sumar-cantidad bg-green-200 text-green-800 rounded-full w-8 h-8 font-bold text-lg hover:bg-green-300">+</button>
+                                </div>
+                                <div class="flex gap-2">
+                                    <button data-id="${articulo.id}" class="editar-articulo text-gray-400 hover:text-blue-500">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
+                                    </button>
+                                    <button data-id="${articulo.id}" class="eliminar-articulo text-gray-400 hover:text-red-500">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                        listaInventario.appendChild(tarjetaArticulo);
+                    });
+                }
+                actualizarResumen();
+            };
+
+            /**
+             * Calcula y actualiza los totales en la sección de resumen (ganancias, costos, etc.).
+             */
+            const actualizarResumen = () => {
+                const gananciaTotal = inventario.reduce((total, item) => total + (item.precioVenta - item.costo) * item.cantidad, 0);
+                const costoTotal = inventario.reduce((total, item) => total + item.costo * item.cantidad, 0);
+                const articulosTotales = inventario.reduce((total, item) => total + item.cantidad, 0);
+
+                gananciaTotalEl.textContent = `$${gananciaTotal.toFixed(2)}`;
+                costoTotalEl.textContent = `$${costoTotal.toFixed(2)}`;
+                articulosTotalesEl.textContent = articulosTotales;
+            };
+
+            /**
+             * Muestra el modal para agregar o editar un artículo.
+             * @param {object | null} articulo - El objeto del artículo a editar, o null si se agrega uno nuevo.
+             */
+            const mostrarModal = (articulo = null) => {
+                formularioArticulo.reset();
+                if (articulo) {
+                    modalTitulo.textContent = 'Editar Artículo';
+                    articuloIdInput.value = articulo.id;
+                    document.getElementById('nombre').value = articulo.nombre;
+                    document.getElementById('cantidad').value = articulo.cantidad;
+                    document.getElementById('costo').value = articulo.costo;
+                    document.getElementById('precio-venta').value = articulo.precioVenta;
+                } else {
+                    modalTitulo.textContent = 'Agregar Nuevo Artículo';
+                    articuloIdInput.value = '';
+                }
+                modal.classList.remove('hidden');
+            };
+
+            /**
+             * Oculta el modal.
+             */
+            const cerrarModal = () => {
+                modal.classList.add('hidden');
+            };
+            
+            /**
+             * Muestra una notificación personalizada.
+             * @param {string} message - El mensaje a mostrar.
+             * @param {string} type - 'success' o 'error'.
+             */
+            const showAlert = (message, type = 'success') => {
+                const alertBox = document.getElementById('custom-alert');
+                const alertMessage = document.getElementById('custom-alert-message');
+                
+                alertMessage.textContent = message;
+                alertBox.className = `fixed top-5 right-5 text-white py-2 px-4 rounded-lg shadow-lg z-50 ${type === 'success' ? 'bg-green-500' : 'bg-red-500'}`;
+                
+                alertBox.classList.remove('hidden');
+                setTimeout(() => {
+                    alertBox.classList.add('hidden');
+                }, 3000);
+            };
+
+            // --- Manejadores de Eventos ---
+
+            // Abrir modal al hacer clic en el botón "Agregar Artículo"
+            abrirModalBtn.addEventListener('click', () => mostrarModal());
+
+            // Cerrar modal
+            cerrarModalBtn.addEventListener('click', cerrarModal);
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    cerrarModal();
+                }
+            });
+
+            // Manejar el envío del formulario (para agregar o editar)
+            formularioArticulo.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const id = articuloIdInput.value;
+                const nombre = document.getElementById('nombre').value;
+                const cantidad = parseInt(document.getElementById('cantidad').value);
+                const costo = parseFloat(document.getElementById('costo').value);
+                const precioVenta = parseFloat(document.getElementById('precio-venta').value);
+
+                if (id) { // Si hay un ID, estamos editando
+                    const indice = inventario.findIndex(item => item.id == id);
+                    if (indice > -1) {
+                        inventario[indice] = { ...inventario[indice], nombre, cantidad, costo, precioVenta };
+                        showAlert('Artículo actualizado con éxito.');
+                    }
+                } else { // Si no, estamos agregando
+                    const nuevoArticulo = {
+                        id: Date.now(), // ID único basado en la fecha actual
+                        nombre,
+                        cantidad,
+                        costo,
+                        precioVenta
+                    };
+                    inventario.push(nuevoArticulo);
+                    showAlert('Artículo agregado con éxito.');
+                }
+
+                guardarEnLocalStorage();
+                renderizarInventario();
+                cerrarModal();
+            });
+
+            // Manejar clics en la lista de inventario (para botones de +, -, y eliminar)
+            listaInventario.addEventListener('click', (e) => {
+                const target = e.target.closest('button');
+                if (!target) return;
+
+                const id = target.dataset.id;
+                const indice = inventario.findIndex(item => item.id == id);
+                if (indice === -1) return;
+
+                if (target.classList.contains('sumar-cantidad')) {
+                    inventario[indice].cantidad++;
+                } else if (target.classList.contains('restar-cantidad')) {
+                    if (inventario[indice].cantidad > 0) {
+                        inventario[indice].cantidad--;
+                    }
+                } else if (target.classList.contains('eliminar-articulo')) {
+                    inventario.splice(indice, 1);
+                     showAlert('Artículo eliminado.', 'error');
+                } else if (target.classList.contains('editar-articulo')) {
+                    mostrarModal(inventario[indice]);
+                    return; // Evita que se vuelva a renderizar innecesariamente
+                }
+                
+                guardarEnLocalStorage();
+                renderizarInventario();
+            });
+
+            // Exportar inventario a un archivo JSON
+            exportarBtn.addEventListener('click', () => {
+                if (inventario.length === 0) {
+                    showAlert('No hay datos para exportar.', 'error');
+                    return;
+                }
+                const dataStr = JSON.stringify(inventario, null, 2);
+                const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
+                const exportFileDefaultName = `inventario_bebe_${new Date().toISOString().slice(0,10)}.json`;
+                
+                const linkElement = document.createElement('a');
+                linkElement.setAttribute('href', dataUri);
+                linkElement.setAttribute('download', exportFileDefaultName);
+                linkElement.click();
+                showAlert('Datos exportados.');
+            });
+
+            // Importar inventario desde un archivo JSON
+            importarInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    try {
+                        const nuevoInventario = JSON.parse(event.target.result);
+                        // Validación básica del archivo importado
+                        if (Array.isArray(nuevoInventario) && nuevoInventario.every(item => 'id' in item && 'nombre' in item)) {
+                            inventario = nuevoInventario;
+                            guardarEnLocalStorage();
+                            renderizarInventario();
+                            showAlert('Inventario importado con éxito.');
+                        } else {
+                            showAlert('El archivo JSON no tiene el formato correcto.', 'error');
+                        }
+                    } catch (error) {
+                         showAlert('Error al leer el archivo JSON.', 'error');
+                    }
+                };
+                reader.readAsText(file);
+                e.target.value = ''; // Limpiar el input para poder importar el mismo archivo de nuevo
+            });
+
+            // --- Inicialización ---
+            // Renderizar el inventario por primera vez al cargar la página.
+            renderizarInventario();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,67 @@
+/* --- Estilos para la App de Inventario de Bebé --- */
+
+/* 1. Importar una fuente amigable desde Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap');
+
+/* 2. Estilos generales del cuerpo de la página */
+body {
+    font-family: 'Nunito', sans-serif; /* Usamos la fuente que importamos */
+    background-color: #f8f9fa; /* Un gris muy claro para el fondo */
+    color: #495057; /* Un color de texto oscuro pero no negro puro */
+}
+
+/* 3. Personalización de la Barra de Navegación */
+.navbar {
+    border-bottom: 3px solid #e0cffc; /* Un borde lila suave */
+    background-color: #ffffff !important; /* Forzamos el fondo a ser blanco */
+}
+
+.navbar-brand {
+    font-weight: 700; /* Hacemos el nombre de la tienda más notorio */
+    color: #8e7cc3 !important; /* Un color morado pastel para el nombre */
+}
+
+.nav-link.active {
+    font-weight: 600;
+    color: #8e7cc3 !important; /* Resaltamos la pestaña activa */
+}
+
+/* 4. Estilo de los Botones Principales */
+.btn-primary {
+    background-color: #8e7cc3; /* Color morado pastel principal */
+    border-color: #8e7cc3; /* Mismo color para el borde */
+    font-weight: 600;
+    transition: background-color 0.3s ease; /* Transición suave al pasar el mouse */
+}
+
+.btn-primary:hover {
+    background-color: #7a6ab5; /* Un tono ligeramente más oscuro al pasar el mouse */
+    border-color: #7a6ab5;
+}
+
+/* 5. Estilo de las Tarjetas (para el formulario) y Tablas */
+.card {
+    border: 1px solid #dee2e6;
+    border-radius: 12px; /* Bordes más redondeados para un look más suave */
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05); /* Sombra sutil */
+}
+
+/* 6. Personalización de la Tabla de Inventario */
+.table thead {
+    background-color: #e0cffc; /* Fondo lila suave para la cabecera de la tabla */
+    color: #343a40;
+    font-weight: 600;
+}
+
+.table tbody tr:hover {
+    background-color: #f1ebff; /* Un color de fondo muy suave al pasar el mouse sobre una fila */
+}
+
+.table {
+    border-radius: 8px;
+    overflow: hidden; /* Asegura que los bordes redondeados se apliquen a la tabla */
+}
+
+h2, h3 {
+    color: #7a6ab5; /* Color principal para los títulos */
+}
