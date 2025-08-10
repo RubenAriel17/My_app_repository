@@ -66,11 +66,8 @@
                 <div class="bg-green-100 p-4 rounded-lg"><h3 class="font-bold text-green-800">Total Items</h3><p id="total-items" class="text-2xl font-bold text-green-900">0</p></div>
                 <div class="bg-pink-100 p-4 rounded-lg"><h3 class="font-bold text-pink-800">Artículos Totales</h3><p id="articulos-totales" class="text-2xl font-bold text-pink-900">0</p></div>
             </div>
-            <div class="mt-6 flex flex-wrap justify-center items-center gap-4">
-                 <button id="abrir-modal-btn" class="bg-pink-500 hover:bg-pink-600 text-white font-bold py-2 px-6 rounded-full transition-transform transform hover:scale-105">+ Agregar Artículo</button>
-                 <!-- Botón temporal para importar inventario inicial -->
-                 <button id="importar-json-firebase-btn" class="bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-6 rounded-full transition-transform transform hover:scale-105">Importar JSON a Firebase</button>
-                 <input type="file" id="json-importer-input" class="hidden" accept=".json">
+            <div class="mt-6 flex justify-center">
+                 <button id="abrir-modal-btn" class="bg-pink-500 hover:bg-pink-600 text-white font-bold py-2 px-6 rounded-full transition-transform transform hover:scale-105 w-full sm:w-auto">+ Agregar Artículo</button>
             </div>
         </div>
         <main id="lista-inventario"></main>
@@ -147,8 +144,6 @@
             historialLimpiarFiltroBtn: document.getElementById('historial-limpiar-filtro-btn'),
             alertBox: document.getElementById('custom-alert'),
             alertMessage: document.getElementById('custom-alert-message'),
-            importarJsonFirebaseBtn: document.getElementById('importar-json-firebase-btn'),
-            jsonImporterInput: document.getElementById('json-importer-input'),
         };
 
         const iconGrid = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>`;
@@ -423,46 +418,6 @@
             XLSX.writeFile(workbook, `Historial_Ventas_bebes.ve_${new Date().toISOString().slice(0,10)}.xlsx`);
         });
 
-        // --- LÓGICA DE IMPORTACIÓN A FIREBASE (TEMPORAL) ---
-        dom.importarJsonFirebaseBtn.addEventListener('click', () => dom.jsonImporterInput.click());
-        dom.jsonImporterInput.addEventListener('change', async (e) => {
-            const file = e.target.files[0];
-            if (!file || !state.userId) return;
-
-            const reader = new FileReader();
-            reader.onload = async (event) => {
-                try {
-                    const inventarioJson = JSON.parse(event.target.result);
-                    if (!Array.isArray(inventarioJson)) {
-                        showAlert('El archivo JSON no es un array válido.', 'error');
-                        return;
-                    }
-
-                    mostrarConfirmacion(`¿Seguro que quieres importar ${inventarioJson.length} artículos? Esto no se puede deshacer.`, async () => {
-                        const batch = writeBatch(db);
-                        const inventarioRef = collection(db, "artifacts", appId, "users", state.userId, "inventario");
-                        
-                        inventarioJson.forEach(item => {
-                            const newDocRef = doc(inventarioRef);
-                            // Se eliminan los campos 'id' del JSON para que Firestore genere los suyos
-                            const { id, ...data } = item; 
-                            batch.set(newDocRef, data);
-                        });
-
-                        await batch.commit();
-                        showAlert(`${inventarioJson.length} artículos importados con éxito a Firebase.`, 'success');
-                    });
-
-                } catch (error) {
-                    console.error("Error al importar JSON:", error);
-                    showAlert('Error al leer o procesar el archivo JSON.', 'error');
-                }
-            };
-            reader.readAsText(file);
-            e.target.value = ''; // Limpiar para poder subir el mismo archivo de nuevo
-        });
-
-
         // --- OTROS EVENTOS ---
         dom.barraBusqueda.addEventListener('input', (e) => { state.searchTerm = e.target.value; renderizarInventario(); });
         dom.toggleViewBtn.addEventListener('click', () => { state.currentView = state.currentView === 'grid' ? 'list' : 'grid'; localStorage.setItem('inventarioView', state.currentView); renderizarInventario(); });
@@ -471,3 +426,4 @@
     </script>
 </body>
 </html>
+
