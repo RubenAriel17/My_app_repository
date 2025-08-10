@@ -46,52 +46,65 @@
     </style>
 </head>
 <body class="text-gray-800">
-    <!-- Contenedor de Carga Inicial -->
-    <div id="initial-loader" class="fixed inset-0 bg-white flex flex-col items-center justify-center z-50">
-        <div class="loader"></div>
-        <p class="mt-4 text-pink-500">Conectando con la base de datos...</p>
-    </div>
-
-    <!-- Cabecera Fija -->
-    <header class="sticky top-0 z-30 bg-[#FFF7F5]/90 backdrop-blur-sm shadow-sm p-4">
-        <div class="container mx-auto"><div class="flex flex-col md:flex-row justify-between items-center gap-4"><div class="text-center md:text-left"><h1 class="text-3xl font-bold text-pink-500">Inventario de bebes.ve</h1><p class="text-gray-500 text-sm">Gestiona el stock y las ventas de tu tienda</p></div><div class="w-full md:w-auto flex items-center gap-2"><input type="search" id="barra-busqueda" placeholder="Buscar producto..." class="w-full md:w-52 p-2 border border-pink-200 rounded-full focus:outline-none focus:ring-2 focus:ring-pink-300"><button id="historial-ventas-btn" class="p-2 rounded-full hover:bg-pink-100 text-pink-500" title="Ver Historial de Ventas"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg></button><button id="toggle-view-btn" class="p-2 rounded-full hover:bg-pink-100 text-pink-500" title="Cambiar Vista"></button></div></div></div>
-    </header>
-
-    <!-- Contenedor principal -->
-    <div class="container mx-auto p-4 md:p-8">
-        <div class="bg-white p-4 rounded-xl shadow-lg mb-8">
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-                <div class="bg-blue-100 p-4 rounded-lg"><h3 class="font-bold text-blue-800">Ganancia Estimada</h3><p id="ganancia-total" class="text-2xl font-bold text-blue-900">$0.00</p></div>
-                <div class="bg-yellow-100 p-4 rounded-lg"><h3 class="font-bold text-yellow-800">Costo Inventario</h3><p id="costo-total" class="text-2xl font-bold text-yellow-900">$0.00</p></div>
-                <div class="bg-green-100 p-4 rounded-lg"><h3 class="font-bold text-green-800">Total Items</h3><p id="total-items" class="text-2xl font-bold text-green-900">0</p></div>
-                <div class="bg-pink-100 p-4 rounded-lg"><h3 class="font-bold text-pink-800">Artículos Totales</h3><p id="articulos-totales" class="text-2xl font-bold text-pink-900">0</p></div>
+    <!-- Contenedor de Autenticación -->
+    <div id="auth-container" class="fixed inset-0 bg-white flex flex-col items-center justify-center z-50">
+        <div class="w-full max-w-sm p-8 space-y-6 bg-white rounded-xl shadow-lg">
+            <div class="text-center">
+                <h1 class="text-3xl font-bold text-pink-500">bebes.ve</h1>
+                <p class="text-gray-500">Acceso al Inventario</p>
             </div>
-            <div class="mt-6 flex justify-center">
-                 <button id="abrir-modal-btn" class="bg-pink-500 hover:bg-pink-600 text-white font-bold py-2 px-6 rounded-full transition-transform transform hover:scale-105 w-full sm:w-auto">+ Agregar Artículo</button>
-            </div>
+            <form id="login-form" class="space-y-4">
+                <input type="email" id="email" placeholder="Correo electrónico" class="w-full p-3 border border-gray-300 rounded-lg" required>
+                <input type="password" id="password" placeholder="Contraseña" class="w-full p-3 border border-gray-300 rounded-lg" required>
+                <button type="submit" class="w-full bg-pink-500 hover:bg-pink-600 text-white font-bold py-3 rounded-lg">Ingresar / Registrarse</button>
+            </form>
+            <p id="auth-error" class="text-red-500 text-sm text-center"></p>
         </div>
-        <main id="lista-inventario"></main>
-    </div>
-
-    <!-- Modales -->
-    <div id="modal-container">
-        <!-- Modal para Agregar/Editar Artículo -->
-        <div id="modal" class="fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-40 hidden"><div class="bg-white p-8 rounded-2xl shadow-2xl w-11/12 md:w-1/3 max-w-lg transform transition-all"><h2 id="modal-titulo" class="text-2xl font-bold mb-6 text-pink-700"></h2><form id="formulario-articulo"><input type="hidden" id="articulo-id"><div class="mb-4"><label for="nombre" class="block text-gray-600 mb-1">Nombre del Artículo</label><input type="text" id="nombre" class="w-full p-3 border border-gray-300 rounded-lg" required></div><div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4"><div><label for="cantidad" class="block text-gray-600 mb-1">Cantidad</label><input type="number" id="cantidad" class="w-full p-3 border border-gray-300 rounded-lg" min="0" required></div><div><label for="costo" class="block text-gray-600 mb-1">Costo ($)</label><input type="number" id="costo" class="w-full p-3 border border-gray-300 rounded-lg" min="0" step="0.01" required></div><div><label for="precio-venta" class="block text-gray-600 mb-1">P. Venta ($)</label><input type="number" id="precio-venta" class="w-full p-3 border border-gray-300 rounded-lg" min="0" step="0.01" required></div></div><div class="mb-4"><label class="block text-gray-600 mb-1">Último Ingreso</label><p id="ultimo-ingreso" class="w-full p-3 bg-gray-100 rounded-lg text-gray-500 text-sm">N/A</p></div><div class="flex justify-end gap-4 mt-8"><button type="button" id="cerrar-modal-btn" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-6 rounded-full">Cancelar</button><button type="submit" class="bg-pink-500 hover:bg-pink-600 text-white font-bold py-2 px-6 rounded-full">Guardar</button></div></form></div></div>
-        <!-- Modal para Registrar Venta -->
-        <div id="venta-modal" class="fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-40 hidden"><div class="bg-white p-8 rounded-2xl shadow-2xl w-11/12 md:w-1/3 max-w-lg transform transition-all"><h2 class="text-2xl font-bold mb-6 text-green-700">Registrar Venta</h2><form id="formulario-venta"><input type="hidden" id="venta-articulo-id"><div class="mb-4 bg-gray-100 p-3 rounded-lg"><p class="font-bold text-gray-800" id="venta-articulo-nombre"></p></div><div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4"><div><label for="venta-cantidad" class="block text-gray-600 mb-1">Cantidad Vendida</label><input type="number" id="venta-cantidad" class="w-full p-3 border border-gray-300 rounded-lg" min="1" required></div><div><label class="block text-gray-600 mb-1">Total Venta</label><p id="venta-total" class="w-full p-3 text-2xl font-bold text-green-600">$0.00</p></div></div><div class="mb-4"><label for="venta-cliente-nombre" class="block text-gray-600 mb-1">Nombre Cliente (Opcional)</label><input type="text" id="venta-cliente-nombre" class="w-full p-3 border border-gray-300 rounded-lg"></div><div class="mb-4"><label for="venta-cliente-telefono" class="block text-gray-600 mb-1">Teléfono (Opcional)</label><input type="tel" id="venta-cliente-telefono" class="w-full p-3 border border-gray-300 rounded-lg"></div><div class="flex justify-end gap-4 mt-8"><button type="button" id="cerrar-venta-modal-btn" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-6 rounded-full">Cancelar</button><button type="submit" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-6 rounded-full">Confirmar Venta</button></div></form></div></div>
-        <!-- Modal para Historial de Ventas -->
-        <div id="historial-modal" class="fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-40 hidden"><div class="bg-white p-8 rounded-2xl shadow-2xl w-11/12 max-w-4xl transform transition-all"><div class="flex justify-between items-center mb-4"><h2 class="text-2xl font-bold text-pink-700">Historial de Ventas</h2><button id="cerrar-historial-modal-btn" class="text-gray-400 hover:text-red-500 text-3xl">&times;</button></div><div class="p-4 bg-gray-50 rounded-lg mb-4"><div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end"><input type="text" id="historial-filtro-texto" placeholder="Buscar por item o cliente..." class="md:col-span-1 w-full p-2 border border-gray-300 rounded-lg"><input type="date" id="historial-filtro-inicio" class="w-full p-2 border border-gray-300 rounded-lg"><div class="flex gap-2"><button id="historial-limpiar-filtro-btn" class="w-full bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-lg">Limpiar</button></div></div></div><div id="lista-historial-ventas" class="modal-body"></div><div class="mt-6 text-right"><button id="exportar-ventas-btn" class="text-sm bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-full">Exportar a Excel</button></div></div></div>
-        <!-- Modal de Confirmación -->
-        <div id="confirm-modal" class="fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-50 hidden"><div class="bg-white p-8 rounded-2xl shadow-2xl w-11/12 max-w-sm text-center"><h2 id="confirm-message" class="text-xl font-bold mb-6 text-gray-800"></h2><div class="flex justify-center gap-4 mt-8"><button type="button" id="cancel-confirm-btn" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-6 rounded-full">Cancelar</button><button type="button" id="confirm-btn" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-6 rounded-full">Confirmar</button></div></div></div>
     </div>
     
-    <!-- Alerta Personalizada -->
-    <div id="custom-alert" class="hidden fixed top-24 right-5 bg-green-500 text-white py-2 px-4 rounded-lg shadow-lg z-50"><p id="custom-alert-message"></p></div>
+    <!-- Contenedor Principal de la App (Oculto por defecto) -->
+    <div id="app-container" class="hidden">
+        <!-- Cabecera Fija -->
+        <header class="sticky top-0 z-30 bg-[#FFF7F5]/90 backdrop-blur-sm shadow-sm p-4">
+            <div class="container mx-auto"><div class="flex flex-col md:flex-row justify-between items-center gap-4"><div class="text-center md:text-left"><h1 class="text-3xl font-bold text-pink-500">Inventario de bebes.ve</h1><p class="text-gray-500 text-sm">Gestiona el stock y las ventas de tu tienda</p></div><div class="w-full md:w-auto flex items-center gap-2"><input type="search" id="barra-busqueda" placeholder="Buscar producto..." class="w-full md:w-52 p-2 border border-pink-200 rounded-full"><button id="historial-ventas-btn" class="p-2 rounded-full hover:bg-pink-100 text-pink-500" title="Historial de Ventas"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg></button><button id="toggle-view-btn" class="p-2 rounded-full hover:bg-pink-100 text-pink-500" title="Cambiar Vista"></button><button id="logout-btn" class="p-2 rounded-full hover:bg-red-100 text-red-500" title="Cerrar Sesión"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg></button></div></div></div>
+        </header>
+
+        <!-- Contenido de la App -->
+        <div class="container mx-auto p-4 md:p-8">
+            <div class="bg-white p-4 rounded-xl shadow-lg mb-8">
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                    <div class="bg-blue-100 p-4 rounded-lg"><h3 class="font-bold text-blue-800">Ganancia Estimada</h3><p id="ganancia-total" class="text-2xl font-bold text-blue-900">$0.00</p></div>
+                    <div class="bg-yellow-100 p-4 rounded-lg"><h3 class="font-bold text-yellow-800">Costo Inventario</h3><p id="costo-total" class="text-2xl font-bold text-yellow-900">$0.00</p></div>
+                    <div class="bg-green-100 p-4 rounded-lg"><h3 class="font-bold text-green-800">Total Items</h3><p id="total-items" class="text-2xl font-bold text-green-900">0</p></div>
+                    <div class="bg-pink-100 p-4 rounded-lg"><h3 class="font-bold text-pink-800">Artículos Totales</h3><p id="articulos-totales" class="text-2xl font-bold text-pink-900">0</p></div>
+                </div>
+                <div class="mt-6 flex justify-center">
+                     <button id="abrir-modal-btn" class="bg-pink-500 hover:bg-pink-600 text-white font-bold py-2 px-6 rounded-full transition-transform transform hover:scale-105 w-full sm:w-auto">+ Agregar Artículo</button>
+                </div>
+            </div>
+            <main id="lista-inventario"></main>
+        </div>
+
+        <!-- Modales -->
+        <div id="modal-container">
+            <!-- Modal para Agregar/Editar Artículo -->
+            <div id="modal" class="fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-40 hidden"><div class="bg-white p-8 rounded-2xl shadow-2xl w-11/12 md:w-1/3 max-w-lg transform transition-all"><h2 id="modal-titulo" class="text-2xl font-bold mb-6 text-pink-700"></h2><form id="formulario-articulo"><input type="hidden" id="articulo-id"><div class="mb-4"><label for="nombre" class="block text-gray-600 mb-1">Nombre del Artículo</label><input type="text" id="nombre" class="w-full p-3 border border-gray-300 rounded-lg" required></div><div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4"><div><label for="cantidad" class="block text-gray-600 mb-1">Cantidad</label><input type="number" id="cantidad" class="w-full p-3 border border-gray-300 rounded-lg" min="0" required></div><div><label for="costo" class="block text-gray-600 mb-1">Costo ($)</label><input type="number" id="costo" class="w-full p-3 border border-gray-300 rounded-lg" min="0" step="0.01" required></div><div><label for="precio-venta" class="block text-gray-600 mb-1">P. Venta ($)</label><input type="number" id="precio-venta" class="w-full p-3 border border-gray-300 rounded-lg" min="0" step="0.01" required></div></div><div class="mb-4"><label class="block text-gray-600 mb-1">Último Ingreso</label><p id="ultimo-ingreso" class="w-full p-3 bg-gray-100 rounded-lg text-gray-500 text-sm">N/A</p></div><div class="flex justify-end gap-4 mt-8"><button type="button" id="cerrar-modal-btn" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-6 rounded-full">Cancelar</button><button type="submit" class="bg-pink-500 hover:bg-pink-600 text-white font-bold py-2 px-6 rounded-full">Guardar</button></div></form></div></div>
+            <!-- Modal para Registrar Venta -->
+            <div id="venta-modal" class="fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-40 hidden"><div class="bg-white p-8 rounded-2xl shadow-2xl w-11/12 md:w-1/3 max-w-lg transform transition-all"><h2 class="text-2xl font-bold mb-6 text-green-700">Registrar Venta</h2><form id="formulario-venta"><input type="hidden" id="venta-articulo-id"><div class="mb-4 bg-gray-100 p-3 rounded-lg"><p class="font-bold text-gray-800" id="venta-articulo-nombre"></p></div><div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4"><div><label for="venta-cantidad" class="block text-gray-600 mb-1">Cantidad Vendida</label><input type="number" id="venta-cantidad" class="w-full p-3 border border-gray-300 rounded-lg" min="1" required></div><div><label class="block text-gray-600 mb-1">Total Venta</label><p id="venta-total" class="w-full p-3 text-2xl font-bold text-green-600">$0.00</p></div></div><div class="mb-4"><label for="venta-cliente-nombre" class="block text-gray-600 mb-1">Nombre Cliente (Opcional)</label><input type="text" id="venta-cliente-nombre" class="w-full p-3 border border-gray-300 rounded-lg"></div><div class="mb-4"><label for="venta-cliente-telefono" class="block text-gray-600 mb-1">Teléfono (Opcional)</label><input type="tel" id="venta-cliente-telefono" class="w-full p-3 border border-gray-300 rounded-lg"></div><div class="flex justify-end gap-4 mt-8"><button type="button" id="cerrar-venta-modal-btn" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-6 rounded-full">Cancelar</button><button type="submit" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-6 rounded-full">Confirmar Venta</button></div></form></div></div>
+            <!-- Modal para Historial de Ventas -->
+            <div id="historial-modal" class="fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-40 hidden"><div class="bg-white p-8 rounded-2xl shadow-2xl w-11/12 max-w-4xl transform transition-all"><div class="flex justify-between items-center mb-4"><h2 class="text-2xl font-bold text-pink-700">Historial de Ventas</h2><button id="cerrar-historial-modal-btn" class="text-gray-400 hover:text-red-500 text-3xl">&times;</button></div><div class="p-4 bg-gray-50 rounded-lg mb-4"><div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end"><input type="text" id="historial-filtro-texto" placeholder="Buscar por item o cliente..." class="md:col-span-1 w-full p-2 border border-gray-300 rounded-lg"><input type="date" id="historial-filtro-inicio" class="w-full p-2 border border-gray-300 rounded-lg"><div class="flex gap-2"><button id="historial-limpiar-filtro-btn" class="w-full bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-lg">Limpiar</button></div></div></div><div id="lista-historial-ventas" class="modal-body"></div><div class="mt-6 text-right"><button id="exportar-ventas-btn" class="text-sm bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-full">Exportar a Excel</button></div></div></div>
+            <!-- Modal de Confirmación -->
+            <div id="confirm-modal" class="fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-50 hidden"><div class="bg-white p-8 rounded-2xl shadow-2xl w-11/12 max-w-sm text-center"><h2 id="confirm-message" class="text-xl font-bold mb-6 text-gray-800"></h2><div class="flex justify-center gap-4 mt-8"><button type="button" id="cancel-confirm-btn" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-6 rounded-full">Cancelar</button><button type="button" id="confirm-btn" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-6 rounded-full">Confirmar</button></div></div></div>
+        </div>
+        
+        <!-- Alerta Personalizada -->
+        <div id="custom-alert" class="hidden fixed top-24 right-5 bg-green-500 text-white py-2 px-4 rounded-lg shadow-lg z-50"><p id="custom-alert-message"></p></div>
+    </div>
 
     <script type="module">
         // --- IMPORTACIONES DE FIREBASE ---
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+        import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, linkWithCredential, EmailAuthProvider } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
         import { getFirestore, collection, doc, onSnapshot, addDoc, updateDoc, deleteDoc, serverTimestamp, writeBatch } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
         // --- CONFIGURACIÓN INICIAL ---
@@ -111,7 +124,11 @@
 
         // --- REFERENCIAS AL DOM ---
         const dom = {
-            initialLoader: document.getElementById('initial-loader'),
+            authContainer: document.getElementById('auth-container'),
+            appContainer: document.getElementById('app-container'),
+            loginForm: document.getElementById('login-form'),
+            authError: document.getElementById('auth-error'),
+            logoutBtn: document.getElementById('logout-btn'),
             listaInventario: document.getElementById('lista-inventario'),
             abrirModalBtn: document.getElementById('abrir-modal-btn'),
             modal: document.getElementById('modal'),
@@ -164,16 +181,50 @@
 
         // --- LÓGICA DE AUTENTICACIÓN Y DATOS ---
         onAuthStateChanged(auth, user => {
-            if (user) {
+            if (user && !user.isAnonymous) {
                 state.userId = user.uid;
+                dom.authContainer.classList.add('hidden');
+                dom.appContainer.classList.remove('hidden');
                 setupRealtimeListeners();
             } else {
-                signInAnonymously(auth).catch(error => console.error("Error en inicio de sesión anónimo:", error));
+                dom.authContainer.classList.remove('hidden');
+                dom.appContainer.classList.add('hidden');
+                if (state.unsubInventario) state.unsubInventario();
+                if (state.unsubVentas) state.unsubVentas();
             }
         });
 
+        dom.loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = dom.loginForm.email.value;
+            const password = dom.loginForm.password.value;
+            dom.authError.textContent = '';
+
+            try {
+                await signInWithEmailAndPassword(auth, email, password);
+            } catch (error) {
+                if (error.code === 'auth/user-not-found') {
+                    try {
+                        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                        // Si el usuario actual es anónimo, enlazar la cuenta
+                        if (auth.currentUser && auth.currentUser.isAnonymous) {
+                            const credential = EmailAuthProvider.credential(email, password);
+                            await linkWithCredential(auth.currentUser, credential);
+                        }
+                    } catch (createError) {
+                        dom.authError.textContent = 'Error al registrar la cuenta.';
+                    }
+                } else {
+                    dom.authError.textContent = 'Correo o contraseña incorrectos.';
+                }
+            }
+        });
+
+        dom.logoutBtn.addEventListener('click', () => {
+            signOut(auth);
+        });
+
         function setupRealtimeListeners() {
-            dom.initialLoader.classList.add('hidden');
             const inventarioRef = collection(db, "artifacts", appId, "users", state.userId, "inventario");
             const ventasRef = collection(db, "artifacts", appId, "users", state.userId, "ventas");
 
@@ -426,4 +477,5 @@
     </script>
 </body>
 </html>
+
 
