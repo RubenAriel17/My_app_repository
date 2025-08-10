@@ -3,510 +3,471 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Inventario de bebes.ve</title>
+    <title>Inventario y Ventas de bebes.ve</title>
     
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     
+    <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
     
+    <!-- SheetJS (js-xlsx) para exportar a Excel -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+    <!-- Estilos personalizados -->
     <style>
-        /* Usamos la fuente Nunito para un look más suave y amigable */
-        body {
-            font-family: 'Nunito', sans-serif;
-            background-color: #FFF7F5; /* Tono de fondo suave inspirado en la paleta */
-        }
-        /* Estilo para la barra de desplazamiento */
-        ::-webkit-scrollbar {
-            width: 8px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #fde8e4;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #fecdd3;
-            border-radius: 10px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #fbbfb7;
-        }
-        /* Animación para la aparición de elementos */
-        .item-enter {
-            animation: enter 0.5s ease-out;
-        }
+        body { font-family: 'Nunito', sans-serif; background-color: #FFF7F5; }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #fde8e4; }
+        ::-webkit-scrollbar-thumb { background: #fecdd3; border-radius: 10px; }
+        .item-enter { animation: enter 0.5s ease-out; }
         @keyframes enter {
-            0% {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            100% {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
-        /* Clases para la vista de lista */
-        .list-view-item {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            width: 100%;
-            padding: 1rem;
-            border-bottom: 1px solid #fde8e4;
+        .list-view-item { display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 1rem; border-bottom: 1px solid #fde8e4; }
+        .list-view-item:last-child { border-bottom: none; }
+        .list-view-item .item-name { flex-grow: 1; }
+        .modal-body { max-height: 60vh; overflow-y: auto; }
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #f472b6;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
         }
-        .list-view-item:last-child {
-            border-bottom: none;
-        }
-        .list-view-item .item-name {
-            flex-grow: 1;
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
     </style>
 </head>
 <body class="text-gray-800">
+    <!-- Contenedor de Carga Inicial -->
+    <div id="initial-loader" class="fixed inset-0 bg-white flex flex-col items-center justify-center z-50">
+        <div class="loader"></div>
+        <p class="mt-4 text-pink-500">Conectando con la base de datos...</p>
+    </div>
 
-    <header class="sticky top-0 z-20 bg-[#FFF7F5]/90 backdrop-blur-sm shadow-sm p-4">
-        <div class="container mx-auto">
-            <div class="flex flex-col md:flex-row justify-between items-center gap-4">
-                <div class="text-center md:text-left">
-                    <h1 class="text-3xl font-bold text-pink-500">Inventario de bebes.ve</h1>
-                    <p class="text-gray-500 text-sm">Gestiona el stock de tu tienda</p>
-                </div>
-                <div class="w-full md:w-auto flex items-center gap-2">
-                    <input type="search" id="barra-busqueda" placeholder="Buscar producto..." class="w-full md:w-64 p-2 border border-pink-200 rounded-full focus:outline-none focus:ring-2 focus:ring-pink-300">
-                    <button id="toggle-view-btn" class="p-2 rounded-full hover:bg-pink-100 text-pink-500">
-                        </button>
-                </div>
-            </div>
-        </div>
+    <!-- Cabecera Fija -->
+    <header class="sticky top-0 z-30 bg-[#FFF7F5]/90 backdrop-blur-sm shadow-sm p-4">
+        <div class="container mx-auto"><div class="flex flex-col md:flex-row justify-between items-center gap-4"><div class="text-center md:text-left"><h1 class="text-3xl font-bold text-pink-500">Inventario de bebes.ve</h1><p class="text-gray-500 text-sm">Gestiona el stock y las ventas de tu tienda</p></div><div class="w-full md:w-auto flex items-center gap-2"><input type="search" id="barra-busqueda" placeholder="Buscar producto..." class="w-full md:w-52 p-2 border border-pink-200 rounded-full focus:outline-none focus:ring-2 focus:ring-pink-300"><button id="historial-ventas-btn" class="p-2 rounded-full hover:bg-pink-100 text-pink-500" title="Ver Historial de Ventas"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg></button><button id="toggle-view-btn" class="p-2 rounded-full hover:bg-pink-100 text-pink-500" title="Cambiar Vista"></button></div></div></div>
     </header>
 
+    <!-- Contenedor principal -->
     <div class="container mx-auto p-4 md:p-8">
-
         <div class="bg-white p-4 rounded-xl shadow-lg mb-8">
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-                <div class="bg-blue-100 p-4 rounded-lg">
-                    <h3 class="font-bold text-blue-800">Ganancia Estimada</h3>
-                    <p id="ganancia-total" class="text-2xl font-bold text-blue-900">$0.00</p>
-                </div>
-                <div class="bg-yellow-100 p-4 rounded-lg">
-                    <h3 class="font-bold text-yellow-800">Costo Inventario</h3>
-                    <p id="costo-total" class="text-2xl font-bold text-yellow-900">$0.00</p>
-                 </div>
-                 <div class="bg-green-100 p-4 rounded-lg">
-                    <h3 class="font-bold text-green-800">Total Items</h3>
-                    <p id="total-items" class="text-2xl font-bold text-green-900">0</p>
-                </div>
-                <div class="bg-pink-100 p-4 rounded-lg">
-                    <h3 class="font-bold text-pink-800">Artículos Totales</h3>
-                    <p id="articulos-totales" class="text-2xl font-bold text-pink-900">0</p>
-                </div>
+                <div class="bg-blue-100 p-4 rounded-lg"><h3 class="font-bold text-blue-800">Ganancia Estimada</h3><p id="ganancia-total" class="text-2xl font-bold text-blue-900">$0.00</p></div>
+                <div class="bg-yellow-100 p-4 rounded-lg"><h3 class="font-bold text-yellow-800">Costo Inventario</h3><p id="costo-total" class="text-2xl font-bold text-yellow-900">$0.00</p></div>
+                <div class="bg-green-100 p-4 rounded-lg"><h3 class="font-bold text-green-800">Total Items</h3><p id="total-items" class="text-2xl font-bold text-green-900">0</p></div>
+                <div class="bg-pink-100 p-4 rounded-lg"><h3 class="font-bold text-pink-800">Artículos Totales</h3><p id="articulos-totales" class="text-2xl font-bold text-pink-900">0</p></div>
             </div>
-             <div class="mt-6 flex flex-wrap justify-between items-center gap-3">
-                 <button id="abrir-modal-btn" class="bg-pink-500 hover:bg-pink-600 text-white font-bold py-2 px-6 rounded-full transition-transform transform hover:scale-105 w-full sm:w-auto">
-                    + Agregar Artículo
-                </button>
-                <div class="flex gap-2">
-                    <button id="exportar-btn" class="text-sm text-gray-500 hover:text-pink-600 font-semibold py-2 px-3 rounded-full hover:bg-pink-50">
-                        Exportar
-                    </button>
-                    <button onclick="document.getElementById('importar-input').click()" class="text-sm text-gray-500 hover:text-pink-600 font-semibold py-2 px-3 rounded-full hover:bg-pink-50">
-                        Importar
-                    </button>
-                    <input type="file" id="importar-input" class="hidden" accept=".json">
-                </div>
+            <div class="mt-6 flex flex-wrap justify-center items-center gap-4">
+                 <button id="abrir-modal-btn" class="bg-pink-500 hover:bg-pink-600 text-white font-bold py-2 px-6 rounded-full transition-transform transform hover:scale-105">+ Agregar Artículo</button>
+                 <!-- Botón temporal para importar inventario inicial -->
+                 <button id="importar-json-firebase-btn" class="bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-6 rounded-full transition-transform transform hover:scale-105">Importar JSON a Firebase</button>
+                 <input type="file" id="json-importer-input" class="hidden" accept=".json">
             </div>
         </div>
-
-        <main id="lista-inventario">
-            </main>
-
+        <main id="lista-inventario"></main>
     </div>
 
-    <div id="modal" class="fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-50 hidden">
-        <div class="bg-white p-8 rounded-2xl shadow-2xl w-11/12 md:w-1/3 max-w-lg transform transition-all">
-            <h2 id="modal-titulo" class="text-2xl font-bold mb-6 text-pink-700">Agregar Nuevo Artículo</h2>
-            <form id="formulario-articulo">
-                <input type="hidden" id="articulo-id">
-                <div class="mb-4">
-                    <label for="nombre" class="block text-gray-600 mb-1">Nombre del Artículo</label>
-                    <input type="text" id="nombre" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-400" placeholder="Ej: Body de algodón" required>
-                </div>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                    <div>
-                        <label for="cantidad" class="block text-gray-600 mb-1">Cantidad</label>
-                        <input type="number" id="cantidad" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-400" min="0" value="1" required>
-                    </div>
-                    <div>
-                        <label for="costo" class="block text-gray-600 mb-1">Costo ($)</label>
-                        <input type="number" id="costo" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-400" min="0" step="0.01" placeholder="5.00" required>
-                    </div>
-                    <div>
-                        <label for="precio-venta" class="block text-gray-600 mb-1">P. Venta ($)</label>
-                        <input type="number" id="precio-venta" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-400" min="0" step="0.01" placeholder="15.00" required>
-                    </div>
-                </div>
-                <div class="flex justify-end gap-4 mt-8">
-                    <button type="button" id="cerrar-modal-btn" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-6 rounded-full">Cancelar</button>
-                    <button type="submit" class="bg-pink-500 hover:bg-pink-600 text-white font-bold py-2 px-6 rounded-full">Guardar</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <div id="confirm-modal" class="fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-50 hidden">
-        <div class="bg-white p-8 rounded-2xl shadow-2xl w-11/12 max-w-sm text-center">
-            <h2 id="confirm-message" class="text-xl font-bold mb-6 text-gray-800">¿Estás seguro?</h2>
-            <div class="flex justify-center gap-4 mt-8">
-                <button type="button" id="cancel-confirm-btn" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-6 rounded-full">Cancelar</button>
-                <button type="button" id="confirm-btn" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-6 rounded-full">Confirmar</button>
-            </div>
-        </div>
+    <!-- Modales -->
+    <div id="modal-container">
+        <!-- Modal para Agregar/Editar Artículo -->
+        <div id="modal" class="fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-40 hidden"><div class="bg-white p-8 rounded-2xl shadow-2xl w-11/12 md:w-1/3 max-w-lg transform transition-all"><h2 id="modal-titulo" class="text-2xl font-bold mb-6 text-pink-700"></h2><form id="formulario-articulo"><input type="hidden" id="articulo-id"><div class="mb-4"><label for="nombre" class="block text-gray-600 mb-1">Nombre del Artículo</label><input type="text" id="nombre" class="w-full p-3 border border-gray-300 rounded-lg" required></div><div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4"><div><label for="cantidad" class="block text-gray-600 mb-1">Cantidad</label><input type="number" id="cantidad" class="w-full p-3 border border-gray-300 rounded-lg" min="0" required></div><div><label for="costo" class="block text-gray-600 mb-1">Costo ($)</label><input type="number" id="costo" class="w-full p-3 border border-gray-300 rounded-lg" min="0" step="0.01" required></div><div><label for="precio-venta" class="block text-gray-600 mb-1">P. Venta ($)</label><input type="number" id="precio-venta" class="w-full p-3 border border-gray-300 rounded-lg" min="0" step="0.01" required></div></div><div class="mb-4"><label class="block text-gray-600 mb-1">Último Ingreso</label><p id="ultimo-ingreso" class="w-full p-3 bg-gray-100 rounded-lg text-gray-500 text-sm">N/A</p></div><div class="flex justify-end gap-4 mt-8"><button type="button" id="cerrar-modal-btn" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-6 rounded-full">Cancelar</button><button type="submit" class="bg-pink-500 hover:bg-pink-600 text-white font-bold py-2 px-6 rounded-full">Guardar</button></div></form></div></div>
+        <!-- Modal para Registrar Venta -->
+        <div id="venta-modal" class="fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-40 hidden"><div class="bg-white p-8 rounded-2xl shadow-2xl w-11/12 md:w-1/3 max-w-lg transform transition-all"><h2 class="text-2xl font-bold mb-6 text-green-700">Registrar Venta</h2><form id="formulario-venta"><input type="hidden" id="venta-articulo-id"><div class="mb-4 bg-gray-100 p-3 rounded-lg"><p class="font-bold text-gray-800" id="venta-articulo-nombre"></p></div><div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4"><div><label for="venta-cantidad" class="block text-gray-600 mb-1">Cantidad Vendida</label><input type="number" id="venta-cantidad" class="w-full p-3 border border-gray-300 rounded-lg" min="1" required></div><div><label class="block text-gray-600 mb-1">Total Venta</label><p id="venta-total" class="w-full p-3 text-2xl font-bold text-green-600">$0.00</p></div></div><div class="mb-4"><label for="venta-cliente-nombre" class="block text-gray-600 mb-1">Nombre Cliente (Opcional)</label><input type="text" id="venta-cliente-nombre" class="w-full p-3 border border-gray-300 rounded-lg"></div><div class="mb-4"><label for="venta-cliente-telefono" class="block text-gray-600 mb-1">Teléfono (Opcional)</label><input type="tel" id="venta-cliente-telefono" class="w-full p-3 border border-gray-300 rounded-lg"></div><div class="flex justify-end gap-4 mt-8"><button type="button" id="cerrar-venta-modal-btn" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-6 rounded-full">Cancelar</button><button type="submit" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-6 rounded-full">Confirmar Venta</button></div></form></div></div>
+        <!-- Modal para Historial de Ventas -->
+        <div id="historial-modal" class="fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-40 hidden"><div class="bg-white p-8 rounded-2xl shadow-2xl w-11/12 max-w-4xl transform transition-all"><div class="flex justify-between items-center mb-4"><h2 class="text-2xl font-bold text-pink-700">Historial de Ventas</h2><button id="cerrar-historial-modal-btn" class="text-gray-400 hover:text-red-500 text-3xl">&times;</button></div><div class="p-4 bg-gray-50 rounded-lg mb-4"><div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end"><input type="text" id="historial-filtro-texto" placeholder="Buscar por item o cliente..." class="md:col-span-1 w-full p-2 border border-gray-300 rounded-lg"><input type="date" id="historial-filtro-inicio" class="w-full p-2 border border-gray-300 rounded-lg"><div class="flex gap-2"><button id="historial-limpiar-filtro-btn" class="w-full bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-lg">Limpiar</button></div></div></div><div id="lista-historial-ventas" class="modal-body"></div><div class="mt-6 text-right"><button id="exportar-ventas-btn" class="text-sm bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-full">Exportar a Excel</button></div></div></div>
+        <!-- Modal de Confirmación -->
+        <div id="confirm-modal" class="fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-50 hidden"><div class="bg-white p-8 rounded-2xl shadow-2xl w-11/12 max-w-sm text-center"><h2 id="confirm-message" class="text-xl font-bold mb-6 text-gray-800"></h2><div class="flex justify-center gap-4 mt-8"><button type="button" id="cancel-confirm-btn" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-6 rounded-full">Cancelar</button><button type="button" id="confirm-btn" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-6 rounded-full">Confirmar</button></div></div></div>
     </div>
     
-    <div id="custom-alert" class="hidden fixed top-24 right-5 bg-green-500 text-white py-2 px-4 rounded-lg shadow-lg z-50">
-        <p id="custom-alert-message"></p>
-    </div>
+    <!-- Alerta Personalizada -->
+    <div id="custom-alert" class="hidden fixed top-24 right-5 bg-green-500 text-white py-2 px-4 rounded-lg shadow-lg z-50"><p id="custom-alert-message"></p></div>
 
+    <script type="module">
+        // --- IMPORTACIONES DE FIREBASE ---
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+        import { getFirestore, collection, doc, onSnapshot, addDoc, updateDoc, deleteDoc, serverTimestamp, writeBatch } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-    <script>
-        // --- SECCIÓN DE LÓGICA (JAVASCRIPT) ---
+        // --- CONFIGURACIÓN INICIAL ---
+        const firebaseConfig = {
+          apiKey: "AIzaSyAsGlhTh20tLtPX9MdC7FVG0pSNyhXZIdA",
+          authDomain: "inventario-bebes-ve.firebaseapp.com",
+          projectId: "inventario-bebes-ve",
+          storageBucket: "inventario-bebes-ve.appspot.com",
+          messagingSenderId: "190889739050",
+          appId: "1:190889739050:web:ef6b57ea8d2ea3afc0d453"
+        };
+        const appId = firebaseConfig.appId;
 
-        document.addEventListener('DOMContentLoaded', () => {
-            // Referencias a los elementos del DOM
-            const listaInventario = document.getElementById('lista-inventario');
-            const abrirModalBtn = document.getElementById('abrir-modal-btn');
-            const cerrarModalBtn = document.getElementById('cerrar-modal-btn');
-            const modal = document.getElementById('modal');
-            const formularioArticulo = document.getElementById('formulario-articulo');
-            const exportarBtn = document.getElementById('exportar-btn');
-            const importarInput = document.getElementById('importar-input');
-            const gananciaTotalEl = document.getElementById('ganancia-total');
-            const costoTotalEl = document.getElementById('costo-total');
-            const articulosTotalesEl = document.getElementById('articulos-totales');
-            const totalItemsEl = document.getElementById('total-items');
-            const modalTitulo = document.getElementById('modal-titulo');
-            const articuloIdInput = document.getElementById('articulo-id');
-            const barraBusqueda = document.getElementById('barra-busqueda');
-            const toggleViewBtn = document.getElementById('toggle-view-btn');
-            
-            // Elementos del modal de confirmación
-            const confirmModal = document.getElementById('confirm-modal');
-            const confirmMessage = document.getElementById('confirm-message');
-            const confirmBtn = document.getElementById('confirm-btn');
-            const cancelConfirmBtn = document.getElementById('cancel-confirm-btn');
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
 
-            const iconGrid = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>`;
-            const iconList = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>`;
+        // --- REFERENCIAS AL DOM ---
+        const dom = {
+            initialLoader: document.getElementById('initial-loader'),
+            listaInventario: document.getElementById('lista-inventario'),
+            abrirModalBtn: document.getElementById('abrir-modal-btn'),
+            modal: document.getElementById('modal'),
+            formularioArticulo: document.getElementById('formulario-articulo'),
+            gananciaTotalEl: document.getElementById('ganancia-total'),
+            costoTotalEl: document.getElementById('costo-total'),
+            articulosTotalesEl: document.getElementById('articulos-totales'),
+            totalItemsEl: document.getElementById('total-items'),
+            modalTitulo: document.getElementById('modal-titulo'),
+            articuloIdInput: document.getElementById('articulo-id'),
+            ultimoIngresoEl: document.getElementById('ultimo-ingreso'),
+            barraBusqueda: document.getElementById('barra-busqueda'),
+            toggleViewBtn: document.getElementById('toggle-view-btn'),
+            confirmModal: document.getElementById('confirm-modal'),
+            confirmMessage: document.getElementById('confirm-message'),
+            confirmBtn: document.getElementById('confirm-btn'),
+            cancelConfirmBtn: document.getElementById('cancel-confirm-btn'),
+            ventaModal: document.getElementById('venta-modal'),
+            formularioVenta: document.getElementById('formulario-venta'),
+            ventaArticuloIdInput: document.getElementById('venta-articulo-id'),
+            ventaArticuloNombreEl: document.getElementById('venta-articulo-nombre'),
+            ventaCantidadInput: document.getElementById('venta-cantidad'),
+            ventaTotalEl: document.getElementById('venta-total'),
+            historialVentasBtn: document.getElementById('historial-ventas-btn'),
+            historialModal: document.getElementById('historial-modal'),
+            listaHistorialVentas: document.getElementById('lista-historial-ventas'),
+            exportarVentasBtn: document.getElementById('exportar-ventas-btn'),
+            historialFiltroTexto: document.getElementById('historial-filtro-texto'),
+            historialFiltroInicio: document.getElementById('historial-filtro-inicio'),
+            historialLimpiarFiltroBtn: document.getElementById('historial-limpiar-filtro-btn'),
+            alertBox: document.getElementById('custom-alert'),
+            alertMessage: document.getElementById('custom-alert-message'),
+            importarJsonFirebaseBtn: document.getElementById('importar-json-firebase-btn'),
+            jsonImporterInput: document.getElementById('json-importer-input'),
+        };
 
-            // --- Estado de la aplicación ---
-            let inventario = []; 
-            let currentView = localStorage.getItem('inventarioView') || 'grid';
-            let searchTerm = '';
-            let confirmCallback = null;
+        const iconGrid = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>`;
+        const iconList = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>`;
 
-            // --- Funciones Principales ---
+        // --- ESTADO DE LA APLICACIÓN ---
+        let state = {
+            inventario: [],
+            ventas: [],
+            currentView: localStorage.getItem('inventarioView') || 'grid',
+            searchTerm: '',
+            confirmCallback: null,
+            ventasFiltradas: [],
+            userId: null,
+            unsubInventario: null,
+            unsubVentas: null,
+        };
 
-            /**
-             * Carga el estado del inventario desde un archivo JSON.
-             * Si falla, intenta cargarlo desde localStorage.
-             */
-            const cargarInventarioInicial = async () => {
-                try {
-                    const response = await fetch('inventario_bebe_2025-08-05.json');
-                    if (!response.ok) {
-                        throw new Error('No se pudo cargar el archivo JSON.');
-                    }
-                    inventario = await response.json();
-                    guardarEnLocalStorage();
-                    showAlert('Inventario cargado automáticamente.');
-                } catch (error) {
-                    console.warn('Error al cargar el archivo JSON. Intentando cargar desde localStorage.');
-                    inventario = JSON.parse(localStorage.getItem('inventarioBebe')) || [];
-                    if (inventario.length > 0) {
-                        showAlert('Inventario cargado desde la última sesión.');
-                    } else {
-                        showAlert('No hay artículos en el inventario.', 'error');
-                    }
-                }
-                renderizarInventario();
-            };
-
-            const guardarEnLocalStorage = () => {
-                localStorage.setItem('inventarioBebe', JSON.stringify(inventario));
-                localStorage.setItem('inventarioView', currentView);
-            };
-
-            const renderizarInventario = () => {
-                listaInventario.innerHTML = '';
-                
-                if(currentView === 'grid') {
-                    listaInventario.className = 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6';
-                    toggleViewBtn.innerHTML = iconList;
-                } else {
-                    listaInventario.className = 'bg-white rounded-xl shadow-lg flex flex-col';
-                    toggleViewBtn.innerHTML = iconGrid;
-                }
-
-                const inventarioFiltrado = inventario.filter(item => 
-                    item.nombre.toLowerCase().includes(searchTerm.toLowerCase())
-                );
-
-                if (inventarioFiltrado.length === 0) {
-                    listaInventario.innerHTML = `<p class="text-gray-500 col-span-full text-center p-10">No hay artículos que coincidan con tu búsqueda.</p>`;
-                    if(searchTerm === '' && inventario.length === 0) {
-                        listaInventario.innerHTML = `<p class="text-gray-500 col-span-full text-center p-10">No hay artículos en el inventario. ¡Agrega el primero!</p>`;
-                    }
-                } else {
-                    inventarioFiltrado.forEach(articulo => {
-                        const gananciaPorArticulo = (articulo.precioVenta - articulo.costo) * articulo.cantidad;
-                        
-                        if (currentView === 'grid') {
-                            const tarjetaArticulo = document.createElement('div');
-                            tarjetaArticulo.className = 'bg-white rounded-xl shadow-lg p-5 flex flex-col justify-between item-enter';
-                            tarjetaArticulo.innerHTML = `
-                                <div>
-                                    <h3 class="text-xl font-bold text-gray-800 break-words">${articulo.nombre}</h3>
-                                    <p class="text-sm text-gray-500">Ganancia: <span class="font-semibold text-green-600">$${gananciaPorArticulo.toFixed(2)}</span></p>
-                                    <div class="text-xs mt-2">
-                                        <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded-full">Costo: $${articulo.costo.toFixed(2)}</span>
-                                        <span class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full">Venta: $${articulo.precioVenta.toFixed(2)}</span>
-                                    </div>
-                                </div>
-                                <div class="mt-4 flex justify-between items-center">
-                                    <div class="flex items-center gap-2">
-                                        <button data-id="${articulo.id}" class="restar-cantidad bg-red-200 text-red-800 rounded-full w-8 h-8 font-bold text-lg hover:bg-red-300">-</button>
-                                        <span class="text-2xl font-bold w-12 text-center">${articulo.cantidad}</span>
-                                        <button data-id="${articulo.id}" class="sumar-cantidad bg-green-200 text-green-800 rounded-full w-8 h-8 font-bold text-lg hover:bg-green-300">+</button>
-                                    </div>
-                                    <div class="flex gap-2">
-                                        <button data-id="${articulo.id}" class="editar-articulo text-gray-400 hover:text-blue-500"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg></button>
-                                        <button data-id="${articulo.id}" class="eliminar-articulo text-gray-400 hover:text-red-500"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg></button>
-                                    </div>
-                                </div>`;
-                            listaInventario.appendChild(tarjetaArticulo);
-                        } else { // Vista de lista
-                             const filaArticulo = document.createElement('div');
-                             filaArticulo.className = 'list-view-item item-enter';
-                             filaArticulo.innerHTML = `
-                                <div class="item-name">
-                                    <h3 class="text-lg font-bold text-gray-800">${articulo.nombre}</h3>
-                                    <p class="text-xs text-gray-500">Costo: $${articulo.costo.toFixed(2)} | Venta: $${articulo.precioVenta.toFixed(2)}</p>
-                                </div>
-                                <div class="flex items-center gap-4">
-                                    <div class="flex items-center gap-2">
-                                        <button data-id="${articulo.id}" class="restar-cantidad bg-red-200 text-red-800 rounded-full w-7 h-7 font-bold text-base hover:bg-red-300">-</button>
-                                        <span class="text-xl font-bold w-10 text-center">${articulo.cantidad}</span>
-                                        <button data-id="${articulo.id}" class="sumar-cantidad bg-green-200 text-green-800 rounded-full w-7 h-7 font-bold text-base hover:bg-green-300">+</button>
-                                    </div>
-                                    <div class="flex gap-2">
-                                        <button data-id="${articulo.id}" class="editar-articulo text-gray-400 hover:text-blue-500"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg></button>
-                                        <button data-id="${articulo.id}" class="eliminar-articulo text-gray-400 hover:text-red-500"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>
-                                    </div>
-                                </div>
-                             `;
-                             listaInventario.appendChild(filaArticulo);
-                        }
-                    });
-                }
-                actualizarResumen();
-            };
-
-            const actualizarResumen = () => {
-                const gananciaTotal = inventario.reduce((total, item) => total + (item.precioVenta - item.costo) * item.cantidad, 0);
-                const costoTotal = inventario.reduce((total, item) => total + item.costo * item.cantidad, 0);
-                const articulosTotales = inventario.reduce((total, item) => total + item.cantidad, 0);
-                const totalItems = inventario.length;
-
-                gananciaTotalEl.textContent = `$${gananciaTotal.toFixed(2)}`;
-                costoTotalEl.textContent = `$${costoTotal.toFixed(2)}`;
-                articulosTotalesEl.textContent = articulosTotales;
-                totalItemsEl.textContent = totalItems;
-            };
-
-            const mostrarModal = (articulo = null) => {
-                formularioArticulo.reset();
-                if (articulo) {
-                    modalTitulo.textContent = 'Editar Artículo';
-                    articuloIdInput.value = articulo.id;
-                    document.getElementById('nombre').value = articulo.nombre;
-                    document.getElementById('cantidad').value = articulo.cantidad;
-                    document.getElementById('costo').value = articulo.costo;
-                    document.getElementById('precio-venta').value = articulo.precioVenta;
-                } else {
-                    modalTitulo.textContent = 'Agregar Nuevo Artículo';
-                    articuloIdInput.value = '';
-                }
-                modal.classList.remove('hidden');
-            };
-
-            const cerrarModal = () => {
-                modal.classList.add('hidden');
-            };
-            
-            const showAlert = (message, type = 'success') => {
-                const alertBox = document.getElementById('custom-alert');
-                const alertMessage = document.getElementById('custom-alert-message');
-                
-                alertMessage.textContent = message;
-                alertBox.className = `fixed top-24 right-5 text-white py-2 px-4 rounded-lg shadow-lg z-50 ${type === 'success' ? 'bg-green-500' : 'bg-red-500'}`;
-                
-                alertBox.classList.remove('hidden');
-                setTimeout(() => {
-                    alertBox.classList.add('hidden');
-                }, 3000);
-            };
-
-            const mostrarConfirmacion = (mensaje, callback) => {
-                confirmMessage.textContent = mensaje;
-                confirmModal.classList.remove('hidden');
-                confirmCallback = callback;
-            };
-
-            const cerrarConfirmacion = () => {
-                confirmModal.classList.add('hidden');
-                confirmCallback = null;
-            };
-
-            // --- Manejadores de Eventos ---
-
-            abrirModalBtn.addEventListener('click', () => mostrarModal());
-            cerrarModalBtn.addEventListener('click', cerrarModal);
-            modal.addEventListener('click', (e) => {
-                if (e.target === modal) {
-                    cerrarModal();
-                }
-            });
-
-            formularioArticulo.addEventListener('submit', (e) => {
-                e.preventDefault();
-                const id = articuloIdInput.value;
-                const nombre = document.getElementById('nombre').value;
-                const cantidad = parseInt(document.getElementById('cantidad').value);
-                const costo = parseFloat(document.getElementById('costo').value);
-                const precioVenta = parseFloat(document.getElementById('precio-venta').value);
-
-                const guardarCambios = () => {
-                    if (id) {
-                        const indice = inventario.findIndex(item => item.id == id);
-                        if (indice > -1) {
-                            inventario[indice] = { ...inventario[indice], nombre, cantidad, costo, precioVenta };
-                            showAlert('Artículo actualizado con éxito.');
-                        }
-                    } else {
-                        const nuevoArticulo = { id: Date.now(), nombre, cantidad, costo, precioVenta };
-                        inventario.push(nuevoArticulo);
-                        showAlert('Artículo agregado con éxito.');
-                    }
-                    guardarEnLocalStorage();
-                    renderizarInventario();
-                    cerrarModal();
-                };
-
-                if (id) {
-                    mostrarConfirmacion('¿Estás seguro de que quieres guardar los cambios?', guardarCambios);
-                } else {
-                    guardarCambios();
-                }
-            });
-
-            listaInventario.addEventListener('click', (e) => {
-                const target = e.target.closest('button');
-                if (!target) return;
-
-                const id = target.dataset.id;
-                const indice = inventario.findIndex(item => item.id == id);
-                if (indice === -1) return;
-
-                if (target.classList.contains('sumar-cantidad')) {
-                    mostrarConfirmacion('¿Añadir 1 unidad a este artículo?', () => {
-                        inventario[indice].cantidad++;
-                        guardarEnLocalStorage();
-                        renderizarInventario();
-                    });
-                } else if (target.classList.contains('restar-cantidad')) {
-                    if (inventario[indice].cantidad > 0) {
-                        mostrarConfirmacion('¿Quitar 1 unidad de este artículo?', () => {
-                            inventario[indice].cantidad--;
-                            guardarEnLocalStorage();
-                            renderizarInventario();
-                        });
-                    }
-                } else if (target.classList.contains('eliminar-articulo')) {
-                    mostrarConfirmacion('¿Seguro que quieres eliminar este artículo?', () => {
-                        inventario.splice(indice, 1);
-                        showAlert('Artículo eliminado.', 'error');
-                        guardarEnLocalStorage();
-                        renderizarInventario();
-                    });
-                } else if (target.classList.contains('editar-articulo')) {
-                    mostrarModal(inventario[indice]);
-                }
-            });
-
-            exportarBtn.addEventListener('click', () => {
-                if (inventario.length === 0) {
-                    showAlert('No hay datos para exportar.', 'error');
-                    return;
-                }
-                const dataStr = JSON.stringify(inventario, null, 2);
-                const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
-                const exportFileDefaultName = `inventario_bebe_${new Date().toISOString().slice(0,10)}.json`;
-                
-                const linkElement = document.createElement('a');
-                linkElement.setAttribute('href', dataUri);
-                linkElement.setAttribute('download', exportFileDefaultName);
-                linkElement.click();
-                showAlert('Datos exportados.');
-            });
-
-            importarInput.addEventListener('change', (e) => {
-                const file = e.target.files[0];
-                if (!file) return;
-
-                const reader = new FileReader();
-                reader.onload = (event) => {
-                    try {
-                        const nuevoInventario = JSON.parse(event.target.result);
-                        if (Array.isArray(nuevoInventario) && nuevoInventario.every(item => 'id' in item && 'nombre' in item)) {
-                            inventario = nuevoInventario;
-                            guardarEnLocalStorage();
-                            renderizarInventario();
-                            showAlert('Inventario importado con éxito.');
-                        } else {
-                            showAlert('El archivo JSON no tiene el formato correcto.', 'error');
-                        }
-                    } catch (error) {
-                         showAlert('Error al leer el archivo JSON.', 'error');
-                    }
-                };
-                reader.readAsText(file);
-                e.target.value = '';
-            });
-
-            barraBusqueda.addEventListener('input', (e) => {
-                searchTerm = e.target.value;
-                renderizarInventario();
-            });
-
-            toggleViewBtn.addEventListener('click', () => {
-                currentView = currentView === 'grid' ? 'list' : 'grid';
-                guardarEnLocalStorage();
-                renderizarInventario();
-            });
-
-            // Manejadores para el modal de confirmación
-            cancelConfirmBtn.addEventListener('click', cerrarConfirmacion);
-            confirmBtn.addEventListener('click', () => {
-                if (confirmCallback) {
-                    confirmCallback();
-                }
-                cerrarConfirmacion();
-            });
-
-            // --- Inicialización ---
-            // Cargar el inventario al iniciar la aplicación
-            cargarInventarioInicial();
+        // --- LÓGICA DE AUTENTICACIÓN Y DATOS ---
+        onAuthStateChanged(auth, user => {
+            if (user) {
+                state.userId = user.uid;
+                setupRealtimeListeners();
+            } else {
+                signInAnonymously(auth).catch(error => console.error("Error en inicio de sesión anónimo:", error));
+            }
         });
+
+        function setupRealtimeListeners() {
+            dom.initialLoader.classList.add('hidden');
+            const inventarioRef = collection(db, "artifacts", appId, "users", state.userId, "inventario");
+            const ventasRef = collection(db, "artifacts", appId, "users", state.userId, "ventas");
+
+            if (state.unsubInventario) state.unsubInventario();
+            state.unsubInventario = onSnapshot(inventarioRef, (snapshot) => {
+                state.inventario = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderizarInventario();
+            });
+
+            if (state.unsubVentas) state.unsubVentas();
+            state.unsubVentas = onSnapshot(ventasRef, (snapshot) => {
+                state.ventas = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            });
+        }
+
+        // --- RENDERIZADO Y ACTUALIZACIÓN VISUAL ---
+        const renderizarInventario = () => {
+            dom.listaInventario.innerHTML = '';
+            dom.toggleViewBtn.innerHTML = state.currentView === 'grid' ? iconList : iconGrid;
+            dom.listaInventario.className = state.currentView === 'grid' ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6' : 'bg-white rounded-xl shadow-lg flex flex-col';
+            
+            const inventarioFiltrado = state.inventario.filter(item => item.nombre.toLowerCase().includes(state.searchTerm.toLowerCase()));
+            
+            if (inventarioFiltrado.length === 0) {
+                dom.listaInventario.innerHTML = `<p class="text-gray-500 col-span-full text-center p-10">No se encontraron artículos.</p>`;
+            } else {
+                inventarioFiltrado.forEach(articulo => {
+                    const gananciaPorArticulo = (articulo.precioVenta - articulo.costo) * articulo.cantidad;
+                    const itemHTML = `<div class="${state.currentView === 'grid' ? 'bg-white rounded-xl shadow-lg p-5 flex flex-col justify-between item-enter' : 'list-view-item item-enter'}"><div class="${state.currentView === 'list' ? 'item-name' : ''}"><h3 class="${state.currentView === 'grid' ? 'text-xl' : 'text-lg'} font-bold text-gray-800 break-words">${articulo.nombre}</h3><p class="text-sm text-gray-500">Ganancia: <span class="font-semibold text-green-600">$${gananciaPorArticulo.toFixed(2)}</span></p><div class="text-xs mt-2 ${state.currentView === 'list' ? 'hidden' : ''}"><span class="bg-blue-100 text-blue-800 px-2 py-1 rounded-full">Costo: $${articulo.costo.toFixed(2)}</span><span class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full">Venta: $${articulo.precioVenta.toFixed(2)}</span></div></div><div class="mt-4 flex ${state.currentView === 'grid' ? 'justify-between' : 'justify-end'} items-center gap-4"><div class="flex items-center gap-2"><button data-id="${articulo.id}" class="restar-cantidad bg-red-200 text-red-800 rounded-full w-8 h-8 font-bold text-lg hover:bg-red-300">-</button><span class="text-2xl font-bold w-12 text-center">${articulo.cantidad}</span><button data-id="${articulo.id}" class="sumar-cantidad bg-green-200 text-green-800 rounded-full w-8 h-8 font-bold text-lg hover:bg-green-300">+</button></div><div class="flex gap-2"><button data-id="${articulo.id}" class="editar-articulo text-gray-400 hover:text-blue-500"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg></button><button data-id="${articulo.id}" class="eliminar-articulo text-gray-400 hover:text-red-500"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button></div></div></div>`;
+                    dom.listaInventario.innerHTML += itemHTML;
+                });
+            }
+            actualizarResumen();
+        };
+
+        const actualizarResumen = () => {
+            dom.gananciaTotalEl.textContent = `$${state.inventario.reduce((t, i) => t + (i.precioVenta - i.costo) * i.cantidad, 0).toFixed(2)}`;
+            dom.costoTotalEl.textContent = `$${state.inventario.reduce((t, i) => t + i.costo * i.cantidad, 0).toFixed(2)}`;
+            dom.articulosTotalesEl.textContent = state.inventario.reduce((t, i) => t + i.cantidad, 0);
+            dom.totalItemsEl.textContent = state.inventario.length;
+        };
+
+        const renderizarHistorialVentas = () => {
+            const texto = dom.historialFiltroTexto.value.toLowerCase();
+            const inicio = dom.historialFiltroInicio.value;
+
+            state.ventasFiltradas = state.ventas.filter(venta => {
+                const fechaVenta = venta.fecha.toDate();
+                const fechaInicio = inicio ? new Date(inicio) : null;
+                if(fechaInicio) fechaInicio.setHours(0,0,0,0);
+                const matchTexto = texto === '' || venta.articuloNombre.toLowerCase().includes(texto) || (venta.clienteNombre && venta.clienteNombre.toLowerCase().includes(texto));
+                const matchFecha = !inicio || fechaVenta >= fechaInicio;
+                return matchTexto && matchFecha;
+            });
+
+            dom.listaHistorialVentas.innerHTML = '';
+            if (state.ventasFiltradas.length === 0) {
+                dom.listaHistorialVentas.innerHTML = '<p class="text-gray-500 text-center p-4">No se encontraron ventas con esos filtros.</p>';
+            } else {
+                state.ventasFiltradas.sort((a, b) => b.fecha - a.fecha).forEach(venta => {
+                    const ventaHTML = `<div class="p-4 border-b border-gray-200"><div class="flex justify-between items-start"><div><p class="font-bold">${venta.articuloNombre}</p><p class="text-sm text-gray-600">Cliente: ${venta.clienteNombre || 'No especificado'}</p><p class="text-xs text-gray-500">Tel: ${venta.clienteTelefono || 'N/A'}</p></div><div class="text-right"><p class="font-bold text-green-600">$${venta.totalVenta.toFixed(2)}</p><p class="text-sm text-gray-600">Cant: ${venta.cantidadVendida}</p><p class="text-xs text-gray-500">${venta.fecha.toDate().toLocaleString()}</p></div></div></div>`;
+                    dom.listaHistorialVentas.innerHTML += ventaHTML;
+                });
+            }
+        };
+
+        // --- GESTIÓN DE MODALES ---
+        const toggleModal = (modalElement, show) => modalElement.classList.toggle('hidden', !show);
+        
+        const mostrarModal = (articulo = null) => {
+            dom.formularioArticulo.reset();
+            if (articulo) {
+                dom.modalTitulo.textContent = 'Editar Artículo';
+                dom.articuloIdInput.value = articulo.id;
+                dom.nombre.value = articulo.nombre;
+                dom.cantidad.value = articulo.cantidad;
+                dom.costo.value = articulo.costo;
+                dom.precioVenta.value = articulo.precioVenta;
+                dom.ultimoIngresoEl.textContent = articulo.ultimaEntrada ? articulo.ultimaEntrada.toDate().toLocaleString() : 'N/A';
+            } else {
+                dom.modalTitulo.textContent = 'Agregar Nuevo Artículo';
+                dom.articuloIdInput.value = '';
+                dom.ultimoIngresoEl.textContent = 'Se registrará al guardar';
+            }
+            toggleModal(dom.modal, true);
+        };
+
+        const mostrarModalVenta = (articulo) => {
+            dom.formularioVenta.reset();
+            dom.ventaArticuloIdInput.value = articulo.id;
+            dom.ventaArticuloNombreEl.textContent = articulo.nombre;
+            dom.ventaCantidadInput.value = 1;
+            dom.ventaCantidadInput.max = articulo.cantidad;
+            dom.ventaTotalEl.textContent = `$${articulo.precioVenta.toFixed(2)}`;
+            toggleModal(dom.ventaModal, true);
+        };
+
+        const mostrarConfirmacion = (mensaje, callback) => {
+            dom.confirmMessage.textContent = mensaje;
+            state.confirmCallback = callback;
+            toggleModal(dom.confirmModal, true);
+        };
+
+        const showAlert = (message, type = 'success') => {
+            dom.alertMessage.textContent = message;
+            dom.alertBox.className = `fixed top-24 right-5 text-white py-2 px-4 rounded-lg shadow-lg z-50 ${type === 'success' ? 'bg-green-500' : 'bg-red-500'}`;
+            toggleModal(dom.alertBox, true);
+            setTimeout(() => toggleModal(dom.alertBox, false), 3000);
+        };
+
+        // --- MANEJADORES DE EVENTOS ---
+        dom.abrirModalBtn.addEventListener('click', () => mostrarModal());
+        Array.from(document.querySelectorAll('[id^="cerrar-"]')).forEach(btn => {
+            btn.addEventListener('click', () => toggleModal(btn.closest('.fixed'), false));
+        });
+        dom.modal.addEventListener('click', (e) => e.target === dom.modal && toggleModal(dom.modal, false));
+
+        dom.formularioArticulo.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = dom.articuloIdInput.value;
+            const data = {
+                nombre: document.getElementById('nombre').value,
+                cantidad: parseInt(document.getElementById('cantidad').value),
+                costo: parseFloat(document.getElementById('costo').value),
+                precioVenta: parseFloat(document.getElementById('precio-venta').value),
+                ultimaEntrada: serverTimestamp()
+            };
+            try {
+                if (id) {
+                    await updateDoc(doc(db, "artifacts", appId, "users", state.userId, "inventario", id), data);
+                    showAlert('Artículo actualizado.');
+                } else {
+                    await addDoc(collection(db, "artifacts", appId, "users", state.userId, "inventario"), data);
+                    showAlert('Artículo agregado.');
+                }
+                toggleModal(dom.modal, false);
+            } catch (error) {
+                console.error("Error guardando artículo: ", error);
+                showAlert('Error al guardar.', 'error');
+            }
+        });
+
+        dom.listaInventario.addEventListener('click', async (e) => {
+            const target = e.target.closest('button');
+            if (!target) return;
+            const id = target.dataset.id;
+            const articulo = state.inventario.find(item => item.id == id);
+            if (!articulo) return;
+
+            if (target.classList.contains('sumar-cantidad')) {
+                const docRef = doc(db, "artifacts", appId, "users", state.userId, "inventario", id);
+                await updateDoc(docRef, {
+                    cantidad: articulo.cantidad + 1,
+                    ultimaEntrada: serverTimestamp()
+                });
+            } else if (target.classList.contains('restar-cantidad')) {
+                if (articulo.cantidad > 0) mostrarConfirmacion(`¿Registrar venta de "${articulo.nombre}"?`, () => mostrarModalVenta(articulo));
+            } else if (target.classList.contains('eliminar-articulo')) {
+                mostrarConfirmacion(`¿Eliminar "${articulo.nombre}"?`, async () => {
+                    await deleteDoc(doc(db, "artifacts", appId, "users", state.userId, "inventario", id));
+                    showAlert('Artículo eliminado.', 'error');
+                });
+            } else if (target.classList.contains('editar-articulo')) {
+                mostrarModal(articulo);
+            }
+        });
+
+        // --- Lógica de Ventas ---
+        dom.ventaCantidadInput.addEventListener('input', () => {
+            const articulo = state.inventario.find(item => item.id == dom.ventaArticuloIdInput.value);
+            if (!articulo) return;
+            let cantidad = Math.min(parseInt(dom.ventaCantidadInput.value) || 1, articulo.cantidad);
+            dom.ventaCantidadInput.value = cantidad;
+            dom.ventaTotalEl.textContent = `$${(articulo.precioVenta * cantidad).toFixed(2)}`;
+        });
+
+        dom.formularioVenta.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const articuloId = dom.ventaArticuloIdInput.value;
+            const articulo = state.inventario.find(item => item.id == articuloId);
+            if (!articulo) return;
+            const cantidadVendida = parseInt(dom.ventaCantidadInput.value);
+            
+            const ventaData = {
+                articuloId: articulo.id,
+                articuloNombre: articulo.nombre,
+                cantidadVendida,
+                precioUnitario: articulo.precioVenta,
+                totalVenta: articulo.precioVenta * cantidadVendida,
+                clienteNombre: document.getElementById('venta-cliente-nombre').value,
+                clienteTelefono: document.getElementById('venta-cliente-telefono').value,
+                fecha: serverTimestamp()
+            };
+            
+            const inventarioDocRef = doc(db, "artifacts", appId, "users", state.userId, "inventario", articuloId);
+            const ventasColRef = collection(db, "artifacts", appId, "users", state.userId, "ventas");
+
+            try {
+                const batch = writeBatch(db);
+                batch.set(doc(ventasColRef), ventaData);
+                batch.update(inventarioDocRef, { cantidad: articulo.cantidad - cantidadVendida });
+                await batch.commit();
+                
+                showAlert('Venta registrada.');
+                toggleModal(dom.ventaModal, false);
+            } catch (error) {
+                console.error("Error en transacción de venta: ", error);
+                showAlert('Error al registrar la venta.', 'error');
+            }
+        });
+
+        // --- Lógica Historial de Ventas ---
+        dom.historialVentasBtn.addEventListener('click', () => {
+            renderizarHistorialVentas();
+            toggleModal(dom.historialModal, true);
+        });
+        [dom.historialFiltroTexto, dom.historialFiltroInicio].forEach(el => el.addEventListener('input', renderizarHistorialVentas));
+        dom.historialLimpiarFiltroBtn.addEventListener('click', () => {
+            dom.historialFiltroTexto.value = '';
+            dom.historialFiltroInicio.value = '';
+            renderizarHistorialVentas();
+        });
+
+        // --- EXPORTAR ---
+        dom.exportarVentasBtn.addEventListener('click', () => {
+            if (state.ventasFiltradas.length === 0) {
+                showAlert('No hay ventas para exportar.', 'error');
+                return;
+            }
+            const datosParaExportar = state.ventasFiltradas.map(v => ({
+                Fecha: v.fecha.toDate().toLocaleString(),
+                Cliente: v.clienteNombre,
+                Telefono: v.clienteTelefono,
+                Producto: v.articuloNombre,
+                Cantidad: v.cantidadVendida,
+                'Precio Unit.': v.precioUnitario,
+                'Total Venta': v.totalVenta
+            }));
+            const worksheet = XLSX.utils.json_to_sheet(datosParaExportar);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Ventas");
+            XLSX.writeFile(workbook, `Historial_Ventas_bebes.ve_${new Date().toISOString().slice(0,10)}.xlsx`);
+        });
+
+        // --- LÓGICA DE IMPORTACIÓN A FIREBASE (TEMPORAL) ---
+        dom.importarJsonFirebaseBtn.addEventListener('click', () => dom.jsonImporterInput.click());
+        dom.jsonImporterInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file || !state.userId) return;
+
+            const reader = new FileReader();
+            reader.onload = async (event) => {
+                try {
+                    const inventarioJson = JSON.parse(event.target.result);
+                    if (!Array.isArray(inventarioJson)) {
+                        showAlert('El archivo JSON no es un array válido.', 'error');
+                        return;
+                    }
+
+                    mostrarConfirmacion(`¿Seguro que quieres importar ${inventarioJson.length} artículos? Esto no se puede deshacer.`, async () => {
+                        const batch = writeBatch(db);
+                        const inventarioRef = collection(db, "artifacts", appId, "users", state.userId, "inventario");
+                        
+                        inventarioJson.forEach(item => {
+                            const newDocRef = doc(inventarioRef);
+                            // Se eliminan los campos 'id' del JSON para que Firestore genere los suyos
+                            const { id, ...data } = item; 
+                            batch.set(newDocRef, data);
+                        });
+
+                        await batch.commit();
+                        showAlert(`${inventarioJson.length} artículos importados con éxito a Firebase.`, 'success');
+                    });
+
+                } catch (error) {
+                    console.error("Error al importar JSON:", error);
+                    showAlert('Error al leer o procesar el archivo JSON.', 'error');
+                }
+            };
+            reader.readAsText(file);
+            e.target.value = ''; // Limpiar para poder subir el mismo archivo de nuevo
+        });
+
+
+        // --- OTROS EVENTOS ---
+        dom.barraBusqueda.addEventListener('input', (e) => { state.searchTerm = e.target.value; renderizarInventario(); });
+        dom.toggleViewBtn.addEventListener('click', () => { state.currentView = state.currentView === 'grid' ? 'list' : 'grid'; localStorage.setItem('inventarioView', state.currentView); renderizarInventario(); });
+        dom.cancelConfirmBtn.addEventListener('click', () => toggleModal(dom.confirmModal, false));
+        dom.confirmBtn.addEventListener('click', () => { if (state.confirmCallback) state.confirmCallback(); toggleModal(dom.confirmModal, false); });
     </script>
 </body>
 </html>
